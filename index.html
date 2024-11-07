@@ -1,1 +1,2021 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021-2024. All rights reserved.
+ * Description: picture interface
+ */
 
+#define LOG_NDEBUG 0
+#define LOG_TAG "IPicture"
+
+#include "IPicture.h"
+
+#include <vector>
+
+#include <binder/Parcel.h>
+
+#include "CommonDef.h"
+#include "DriverBaseClient.h"
+#include "LogDef.h"
+#include "ModuleDef.h"
+
+using android::Parcel;
+
+int32_t IPicture::GetPqCapability(SourceType srcId) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_PQ_CAPABILITY);
+    request.writeInt32(srcId);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    reply.readInt32();
+    int32_t capAbility = reply.readInt32();
+    LOGI("capAbility = %d", capAbility);
+    return capAbility;
+}
+
+int32_t IPicture::SetDciGainLevel(CommonLevel level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DCI_GAIN_LEVEL);
+    request.writeInt32(level);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetDciGainLevel[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDciGainLevel(CommonLevel &level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DCI_GAIN_LEVEL);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    level = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("GetDciGainLevel[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::GetCuvaDeviceSupport() const
+{
+    Parcel request;
+    request.writeInt32(CMD_SYSTEM_GET_BOOL_CONFIG_VALUE);
+    std::string input = "globalconfig:CuvaDeviceSupport";
+    LOGI("GetCuvaDeviceSupport, intPutParm[%s]", input.c_str());
+    request.writeString16(android::String16(input.c_str()));
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("GetCuvaDeviceSupport, ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::SetAutoPicModeEnable(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_AUTO_PIC_MODE_ENABLE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetAutoPicModeEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetBacklightThreshold(const AmbientLightThreshold &threshold) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BACKLIGHT_THRESHOLD);
+    request.writeUint32(threshold.apkId);
+    request.writeUint32(threshold.time);
+    request.writeUint32(threshold.threshold);
+    request.writeInt32(threshold.isUpDirection ? 1 : 0);
+    request.writeInt32(threshold.isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetBacklightThreshold, apkId[%u], time[%u], threshold[%u], isUpDirection[%d], isEnable[%d], ret[%d]",
+        threshold.apkId, threshold.time, threshold.threshold, threshold.isUpDirection, threshold.isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBacklightThreshold(AmbientLightThreshold &threshold) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BACKLIGHT_THRESHOLD);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    threshold.apkId = reply.readUint32();
+    threshold.time = reply.readUint32();
+    threshold.threshold = reply.readUint32();
+    threshold.isUpDirection = (reply.readInt32() == 1);
+    threshold.isEnable = (reply.readInt32() == 1);
+    LOGI("GetBacklightThreshold, apkId[%u], time[%u], threshold[%u], isUpDirection[%d], isEnable[%d], ret[%d]",
+        threshold.apkId, threshold.time, threshold.threshold, threshold.isUpDirection, threshold.isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetLocalDimmingSupport(bool &isLocalDimmingSupport) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_LOCAL_DIMMING_SUPPORT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isLocalDimmingSupport = (reply.readInt32() == 1);
+    LOGI("GetLocalDimmingSupport[%d], ret[%d]", isLocalDimmingSupport, ret);
+    return ret;
+}
+
+int32_t IPicture::GetPictureModeList(std::vector<int32_t> &picModes) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_PICTURE_MODE_LIST);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    int32_t size = reply.readInt32();
+    /* 对size的合法性进行校验，图像模式取值范围1-12 */
+    if (size < 1 || size > 12) {
+        LOGE("invalid param!");
+        return ret;
+    }
+    for (int32_t i = 0; i < size; i++) {
+        picModes[i] = reply.readInt32();
+        LOGI("support picture mode: %d", picModes[i]);
+    }
+    return ret;
+}
+
+int32_t IPicture::SetVideoInfoStart(uint32_t categoryId) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_VIDEO_INFO_START);
+    request.writeUint32(categoryId);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetVideoInfoStart[%u], ret[%d]", categoryId, ret);
+    return ret;
+}
+
+int32_t IPicture::SetVideoInfoStop() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_VIDEO_INFO_STOP);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetVideoInfoStop, ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::SetUploadBacklight(uint32_t backlight) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_UPLOAD_BACKLIGHT);
+    request.writeUint32(backlight);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetBacklight[%u], ret[%d]", backlight, ret);
+    return ret;
+}
+
+int32_t IPicture::SetNaturalTone(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_NATURAL_TONE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetNaturalTone[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetNaturalTone(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_NATURAL_TONE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("GetNaturalTone[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::Set2PointColorTemp(const ColorTempParam &caliParam) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_2POINT_COLOR_TEMP);
+    request.writeInt32(0);
+    request.writeInt32(caliParam.redGain);
+    request.writeInt32(caliParam.greenGain);
+    request.writeInt32(caliParam.blueGain);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("Set2PointColorTemp, redGain[%d], greenGain[%d], blueGain[%d], ret[%d]", caliParam.redGain,
+         caliParam.greenGain, caliParam.blueGain, ret);
+    return ret;
+}
+
+int32_t IPicture::Get2PointColorTemp(ColorTempParam &caliParam) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_2POINT_COLOR_TEMP);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    int32_t size = reply.readInt32();
+    /* 对size的合法性进行校验，size 的取值为 6 */
+    if (size != 6) {
+        LOGE("invalid param!");
+        return ret;
+    }
+    caliParam.redGain = reply.readInt32();
+    caliParam.greenGain = reply.readInt32();
+    caliParam.blueGain = reply.readInt32();
+    caliParam.redOffset = reply.readInt32();
+    caliParam.greenOffset = reply.readInt32();
+    caliParam.blueOffset = reply.readInt32();
+    LOGI("Get2PointColorTemp, redGain[%d], greenGain[%d], blueGain[%d], ret[%d]", caliParam.redGain,
+         caliParam.greenGain, caliParam.blueGain, ret);
+    return ret;
+}
+
+int32_t IPicture::Set10PointGamma(GammaCaliPoint point, const GammaCaliParam &caliParam) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_10POINT_GAMMA);
+    request.writeInt32(point);
+    request.writeInt32(caliParam.colorR);
+    request.writeInt32(caliParam.colorG);
+    request.writeInt32(caliParam.colorB);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("Set10PointGamma, colorR[%d], colorG[%d], colorB[%d], ret[%d]", caliParam.colorR,
+        caliParam.colorG, caliParam.colorB, ret);
+    return ret;
+}
+
+int32_t IPicture::Get10PointGamma(GammaCaliParam (&gammaCali)[GAMMA_CALIPOINT_BUTT]) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_10POINT_GAMMA);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    int32_t size = reply.readInt32();
+    /* 对size的合法性进行校验，size的值为30 */
+    if (size != 30) {
+        LOGE("invalid param!");
+        return ret;
+    }
+    for (uint32_t i = 0; i < GAMMA_CALIPOINT_BUTT; i++) {
+        gammaCali[i].colorR = reply.readInt32();
+        gammaCali[i].colorG = reply.readInt32();
+        gammaCali[i].colorB = reply.readInt32();
+        LOGI("gamma point[%u], colorR[%d], colorG[%d], colorB[%d]", i, gammaCali[i].colorR,
+            gammaCali[i].colorG, gammaCali[i].colorB);
+    }
+    return ret;
+}
+
+int32_t IPicture::RestoreCalibration() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_RESTORE_CALIBRATION);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("RestoreCalibration, ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::SetBacklightEnable(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BACKLIGHT_ENABLE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetBacklightEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBacklightEnable(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BACKLIGHT_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("GetBacklightEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDynamicBacklightEnable(bool isDynamicBacklightEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DYNAMIC_BACKLIGHT_ENABLE);
+    request.writeInt32(isDynamicBacklightEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetDynamicBacklightEnable[%d], ret[%d]", isDynamicBacklightEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDynamicBacklightEnable(bool &isDynamicBacklightEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DYNAMIC_BACKLIGHT_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isDynamicBacklightEnable = (reply.readInt32() == 1);
+    LOGI("GetDynamicBacklightEnable[%d], ret[%d]", isDynamicBacklightEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetTargetBacklight(uint32_t targetBacklight) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_TARGET_BACKLIGHT);
+    request.writeUint32(targetBacklight);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("targetBacklight[%u], ret[%d]", targetBacklight, ret);
+    return ret;
+}
+
+int32_t IPicture::SetBacklight(uint32_t backlight) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BACKLIGHT);
+    request.writeUint32(backlight);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("backlight[%u], ret[%d]", backlight, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBacklight(uint32_t &backlight) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BACKLIGHT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    backlight = reply.readUint32();
+    LOGI("backlight[%u], ret[%d]", backlight, ret);
+    return ret;
+}
+
+int32_t IPicture::SetContrast(uint32_t contrast) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_CONTRAST);
+    request.writeUint32(contrast);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("contrast[%u], ret[%d]", contrast, ret);
+    return ret;
+}
+
+int32_t IPicture::GetContrast(uint32_t &contrast) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_CONTRAST);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    contrast = reply.readUint32();
+    LOGI("contrast[%u], ret[%d]", contrast, ret);
+    return ret;
+}
+
+int32_t IPicture::SetGamma(GammaType gamma) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_GAMMA);
+    request.writeInt32(gamma);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("gamma[%d], ret[%d]", gamma, ret);
+    return ret;
+}
+
+int32_t IPicture::GetGamma(GammaType &gamma) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_GAMMA);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    gamma = static_cast<GammaType>(reply.readInt32());
+    LOGI("gamma[%d], ret[%d]", gamma, ret);
+    return ret;
+}
+
+int32_t IPicture::SetBrightness(uint32_t brightness) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BRIGHTNESS);
+    request.writeInt32(brightness);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("brightness[%u], ret[%d]", brightness, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBrightness(uint32_t &brightness) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BRIGHTNESS);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    brightness = reply.readUint32();
+    LOGI("brightness[%u], ret[%d]", brightness, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDynamicBlEnable(bool isDynamicBacklightEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DYNAMIC_BACKLIGHT_ENABLE);
+    request.writeInt32(isDynamicBacklightEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("isDynamicBacklightEnable[%d], ret[%d]", isDynamicBacklightEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDynamicBlEnable(bool &isDynamicBacklightEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DYNAMIC_BACKLIGHT_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isDynamicBacklightEnable = (reply.readInt32() == 1);
+    LOGI("isDynamicBacklightEnable[%d], ret[%d]", isDynamicBacklightEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetBoostPeakLevel(CommonLevel boostLevel) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BOOST_PEAK_LEVEL);
+    request.writeInt32(boostLevel);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("boostLevel[%d], ret[%d]", boostLevel, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBoostPeakLevel(CommonLevel &boostLevel) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BOOST_PEAK_LEVEL);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    boostLevel = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("boostLevel[%d], ret[%d]", boostLevel, ret);
+    return ret;
+}
+
+int32_t IPicture::SetSaturation(uint32_t saturation) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_SATURATION);
+    request.writeUint32(saturation);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("saturation[%u], ret[%d]", saturation, ret);
+    return ret;
+}
+
+int32_t IPicture::GetSaturation(uint32_t &saturation) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_SATURATION);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    saturation = reply.readUint32();
+    LOGI("saturation[%u], ret[%d]", saturation, ret);
+    return ret;
+}
+
+int32_t IPicture::SetHue(uint32_t hue) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_HUE);
+    request.writeUint32(hue);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("hue[%u], ret[%d]", hue, ret);
+    return ret;
+}
+
+int32_t IPicture::GetHue(uint32_t &hue) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_HUE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    hue = reply.readUint32();
+    LOGI("hue[%u], ret[%d]", hue, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorTempMode(ColorTempMode colorTempMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_TEMP_MODE);
+    request.writeInt32(colorTempMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("colorTempMode[%d], ret[%d]", colorTempMode, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorTempMode(ColorTempMode &colorTempMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_TEMP_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorTempMode = static_cast<ColorTempMode>(reply.readInt32());
+    LOGI("colorTempMode[%d], ret[%d]", colorTempMode, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorTempStep(uint32_t step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_TEMP_STEP);
+    request.writeUint32(step);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorTempStep(uint32_t &step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_TEMP_STEP);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    step = reply.readUint32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::RestoreCurrentPictureMode() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_RESTORE_CURRENT_PICTURE_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("RestoreCurrentPictureMode, ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::SetEyeProtectStep(uint32_t step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_EYE_PROTECT_STEP);
+    request.writeUint32(step);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::GetEyeProtectStep(uint32_t &step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_EYE_PROTECT_STEP);
+    request.writeUint32(step);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    step = reply.readUint32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::SetPictureMode(PictureMode pictureMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_PICTURE_MODE);
+    request.writeInt32(pictureMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("pictureMode[%d], ret[%d]", pictureMode, ret);
+    return ret;
+}
+
+int32_t IPicture::GetPictureMode(PictureMode &pictureMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_PICTURE_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    pictureMode = static_cast<PictureMode>(reply.readInt32());
+    LOGI("pictureMode[%d], ret[%d]", pictureMode, ret);
+    return ret;
+}
+
+int32_t IPicture::SetAspect(VideoAspect videoAspect) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_ASPECT);
+    request.writeInt32(videoAspect);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("videoAspect[%d], ret[%d]", videoAspect, ret);
+    return ret;
+}
+
+int32_t IPicture::GetAspect(VideoAspect &videoAspect) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_ASPECT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    videoAspect = static_cast<VideoAspect>(reply.readInt32());
+    LOGI("videoAspect[%d], ret[%d]", videoAspect, ret);
+    return ret;
+}
+
+int32_t IPicture::SetHdmiRange(HdmiRange hdmiRange) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_HDMI_RANGE);
+    request.writeInt32(hdmiRange);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("hdmiRange[%d], ret[%d]", hdmiRange, ret);
+    return ret;
+}
+
+int32_t IPicture::GetHdmiRange(HdmiRange &hdmiRange) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_HDMI_RANGE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    hdmiRange = static_cast<HdmiRange>(reply.readInt32());
+    LOGI("hdmiRange[%d], ret[%d]", hdmiRange, ret);
+    return ret;
+}
+
+int32_t IPicture::SetAutoBacklightEnable(bool isAutoEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_AUTO_BACKLIGHT_ENABLE);
+    request.writeInt32(isAutoEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("isAutoEnable[%d], ret[%d]", isAutoEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetAutoBacklightEnable(bool &isAutoEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_AUTO_BACKLIGHT_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isAutoEnable = (reply.readInt32() == 1);
+    LOGI("isAutoEnable[%d], ret[%d]", isAutoEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetSourceHdrType(HdrType &hdrType) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_SOURCE_HDR_TYPE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    hdrType = static_cast<HdrType>(reply.readInt32());
+    LOGI("hdrType[%d], ret[%d]", hdrType, ret);
+    return ret;
+}
+
+int32_t IPicture::SetUserHdrType(UserHdrType userHdrType) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_USER_HDR_TYPE);
+    request.writeInt32(userHdrType);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("userHdrType[%d], ret[%d]", userHdrType, ret);
+    return ret;
+}
+
+int32_t IPicture::GetUserHdrType(UserHdrType &userHdrType) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_USER_HDR_TYPE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    userHdrType = static_cast<UserHdrType>(reply.readInt32());
+    LOGI("userHdrType[%d], ret[%d]", userHdrType, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorManageMode(ColorManagementMode colorManageMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_MANAGE_MODE);
+    request.writeInt32(colorManageMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("colorManageMode[%d], ret[%d]", colorManageMode, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorManageMode(ColorManagementMode &colorManageMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_MANAGE_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorManageMode = static_cast<ColorManagementMode>(reply.readInt32());
+    LOGI("colorManageMode[%d], ret[%d]", colorManageMode, ret);
+    return ret;
+}
+
+int32_t IPicture::GetNormalColorManageMode(ColorManagementMode &colorManageMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_NORMAL_COLOR_MANAGE_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorManageMode = static_cast<ColorManagementMode>(reply.readInt32());
+    LOGI("colorManageMode[%d], ret[%d]", colorManageMode, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorGamut(ColorGamutType colorGamut) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_GAMUT);
+    request.writeInt32(colorGamut);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("colorGamut[%d], ret[%d]", colorGamut, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorGamut(ColorGamutType &colorGamut) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_GAMUT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorGamut = static_cast<ColorGamutType>(reply.readInt32());
+    LOGI("colorGamut[%d], ret[%d]", colorGamut, ret);
+    return ret;
+}
+
+int32_t IPicture::SetWhitePoint(WhitePointType whitePoint) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_WHITE_POINT);
+    request.writeInt32(whitePoint);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("whitePoint[%d], ret[%d]", whitePoint, ret);
+    return ret;
+}
+
+int32_t IPicture::GetWhitePoint(WhitePointType &whitePoint) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_WHITE_POINT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    whitePoint = static_cast<WhitePointType>(reply.readInt32());
+    LOGI("whitePoint[%d], ret[%d]", whitePoint, ret);
+    return ret;
+}
+
+int32_t IPicture::SetOetf(OetfType oetf) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_OETF);
+    request.writeInt32(oetf);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("oetf[%d], ret[%d]", oetf, ret);
+    return ret;
+}
+
+int32_t IPicture::GetOetf(OetfType &oetf) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_OETF);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    oetf = static_cast<OetfType>(reply.readInt32());
+    LOGI("oetf[%d], ret[%d]", oetf, ret);
+    return ret;
+}
+
+int32_t IPicture::SetSharpness(uint32_t sharpness) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_SHARPNESS);
+    request.writeUint32(sharpness);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("sharpness[%d], ret[%d]", sharpness, ret);
+    return ret;
+}
+
+int32_t IPicture::GetSharpness(uint32_t &sharpness) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_SHARPNESS);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    sharpness = reply.readUint32();
+    LOGI("sharpness[%d], ret[%d]", sharpness, ret);
+    return ret;
+}
+
+int32_t IPicture::SetNr(CommonLevel nr) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_NR);
+    request.writeInt32(nr);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("nr[%d], ret[%d]", nr, ret);
+    return ret;
+}
+
+int32_t IPicture::GetNr(CommonLevel &nr) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_NR);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    nr = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("nr[%d], ret[%d]", nr, ret);
+    return ret;
+}
+
+int32_t IPicture::SetMpegNr(CommonLevel mpegNr) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_MPEG_NR);
+    request.writeInt32(mpegNr);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("mpegNr[%d], ret[%d]", mpegNr, ret);
+    return ret;
+}
+
+int32_t IPicture::GetMpegNr(CommonLevel &mpegNr) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_MPEG_NR);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    mpegNr = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("mpegNr[%d], ret[%d]", mpegNr, ret);
+    return ret;
+}
+
+int32_t IPicture::SetMemc(CommonLevel memc) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_MEMC);
+    request.writeInt32(memc);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("memc[%d], ret[%d]", memc, ret);
+    return ret;
+}
+
+int32_t IPicture::GetMemc(CommonLevel &memc) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_MEMC);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    memc = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("memc[%d], ret[%d]", memc, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDemoModeSupport(DemoMode demoMode, bool &isSupport) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DEMOMODE_SUPPORT);
+    request.writeInt32(demoMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isSupport = (reply.readInt32() == 1);
+    LOGI("demoMode[%d], isSupport[%d], ret[%d]", demoMode, isSupport, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDemoMotionSupport(DemoMode demoMode, bool &isSupport) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DEMO_MOTION_SUPPORT);
+    request.writeInt32(demoMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isSupport = (reply.readInt32() == 1);
+    LOGI("demoMode[%d], isSupport[%d], ret[%d]", demoMode, isSupport, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDemoModeEnable(DemoMode demoMode, bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DEMOMODE);
+    request.writeInt32(demoMode);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("demoMode[%d], isEnable[%d], ret[%d]", demoMode, isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDemoModeEnable(DemoMode demoMode, bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DEMOMODE);
+    request.writeInt32(demoMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("demoMode[%d], isEnable[%d], ret[%d]", demoMode, isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDemoModeMotion(DemoMode demoMode, int32_t percentage) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DEMOMODE_MOTION);
+    request.writeInt32(demoMode);
+    request.writeInt32(percentage);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("demoMode[%d], percentage[%d], ret[%d]", demoMode, percentage, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDlgEnable(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DLG_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("isEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDlgEnable(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DLG_ENABLE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("isEnable[%d] ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetClearMotion(CommonLevel clearMotion) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_CLEAR_MOTION);
+    request.writeInt32(clearMotion);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("clearMotion[%d], ret[%d]", clearMotion, ret);
+    return ret;
+}
+
+int32_t IPicture::GetClearMotion(CommonLevel &clearMotion) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_CLEAR_MOTION);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    clearMotion = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("clearMotion[%d], ret[%d]", clearMotion, ret);
+    return ret;
+}
+
+int32_t IPicture::SetPqModuleEnable(PqModuleType module, bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_PQMODULE_ENABLE);
+    request.writeInt32(module);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetPqmodule[%d], isEnable[%d], ret[%d]", module, isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetPqModuleEnable(PqModuleType module, bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_PQMODULE_ENABLE);
+    request.writeInt32(module);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("GetPqmodule[%d], isEnable[%d], ret[%d]", module, isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetAiPqSwitch(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_AI_PQ_SWITCH);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetAiPqSwitch isEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetAiPqSwitch(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_AI_PQ_SWITCH);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() == 1);
+    LOGI("GetAiPqSwitch isEnable[%d], ret[%d]", isEnable, ret);
+    return ret;
+}
+
+bool IPicture::HasGameMachine() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_HAS_GAME_MACHINE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return false;
+    }
+    ret = reply.readInt32();
+    if (ret != RETURN_SUCCESS) {
+        return false;
+    }
+    bool hasGameMachine = (reply.readInt32() == 1);
+    LOGI("hasGameMachine[%d]", hasGameMachine);
+    return hasGameMachine;
+}
+
+int32_t IPicture::ResetGameEnhance() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_RESET_GAME_ENHANCE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("ResetGameEnhance invoked, ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::SetGameType(GameType game) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_GAME_TYPE);
+    request.writeInt32(game);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("game[%d], ret[%d]", game, ret);
+    return ret;
+}
+
+int32_t IPicture::GetGameType(GameType &game) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_GAME_TYPE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    game = static_cast<GameType>(reply.readInt32());
+    LOGI("game[%d], ret[%d]", game, ret);
+    return ret;
+}
+
+int32_t IPicture::SetGameColorTempMode(ColorTempMode colorTempMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_GAME_COLOR_TEMP_MODE);
+    request.writeInt32(colorTempMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("colorTempMode[%d], ret[%d]", colorTempMode, ret);
+    return ret;
+}
+
+int32_t IPicture::GetGameColorTempMode(ColorTempMode &colorTempMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_GAME_COLOR_TEMP_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorTempMode = static_cast<ColorTempMode>(reply.readInt32());
+    LOGI("colorTempMode[%d], ret[%d]", colorTempMode, ret);
+    return ret;
+}
+
+int32_t IPicture::SetGameColorTempStep(uint32_t step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_GAME_COLOR_TEMP_STEP);
+    request.writeUint32(step);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::GetGameColorTempStep(uint32_t &step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_GAME_COLOR_TEMP_STEP);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    step = reply.readUint32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::SetGameEyeProtectStep(uint32_t step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_GAME_EYE_PROTECT_STEP);
+    request.writeUint32(step);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::GetGameEyeProtectStep(uint32_t &step) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_GAME_EYE_PROTECT_STEP);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    step = reply.readUint32();
+    LOGI("step[%u], ret[%d]", step, ret);
+    return ret;
+}
+
+int32_t IPicture::SetDarkDetailLevel(CommonLevel level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_DARK_DETAIL_LEVEL);
+    request.writeUint32(level);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("gain[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::GetDarkDetailLevel(CommonLevel &level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_DARK_DETAIL_LEVEL);
+    request.writeInt32(level);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    level = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("level[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::SetBrightDetailLevel(CommonLevel level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_BRIGHT_DETAIL_LEVEL);
+    request.writeInt32(level);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("level[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::GetBrightDetailLevel(CommonLevel &level) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_BRIGHT_DETAIL_LEVEL);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    level = static_cast<CommonLevel>(reply.readInt32());
+    LOGI("level[%d], ret[%d]", level, ret);
+    return ret;
+}
+
+int32_t IPicture::GetEffectPictureMode(PictureMode &pictureMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_EFFECT_PICTURE_MODE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    pictureMode = static_cast<PictureMode>(reply.readInt32());
+    LOGV("pictureMode[%d], ret[%d]", pictureMode, ret);
+    return ret;
+}
+
+int32_t IPicture::SetAiPqParamOffset(AiPqModelType Model, uint32_t modelVersion) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_AIPQ_OFFSET);
+    request.writeInt32(Model);
+    request.writeUint32(modelVersion);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("Model[%d], modelVersion[%u], ret[%d]", Model, modelVersion, ret);
+    return ret;
+}
+
+int32_t IPicture::MakeAiPqToast() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_MAKE_AI_PQ_TOAST);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("GetAiPqToast ret[%d]", ret);
+    return ret;
+}
+
+int32_t IPicture::GetLocalDimmingChannelFault(CheckLdmFault &ldmFault) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_LDM_CHANNEL_FAULT);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ldmFault.spiValue = 0;
+    ldmFault.powerFault = 0;
+    ldmFault.faultList.clear();
+    ret = reply.readInt32();
+    if (ret != RETURN_SUCCESS) {
+        LOGE("reply failed");
+        return ret;
+    }
+    ldmFault.spiValue = reply.readUint32();
+    ldmFault.powerFault = reply.readUint32();
+    uint32_t ldmSize = reply.readUint32();
+    for (uint32_t i = 0; i < ldmSize && i < FaultDetectSituation::PANEL_LDM_MAX_LEN; i++) {
+        ldmFault.faultList.emplace_back(reply.readUint32());
+    }
+    LOGI("GetLocalDimmingChannelFault ret:%d size:%u", ret, ldmSize);
+
+    return ret;
+}
+
+int32_t IPicture::SetCameraLuxValue(int32_t luxValue) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_CAMERA_LUX_VALUE);
+    request.writeInt32(luxValue);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("SetCameraLuxValue, luxValue=%d, ret=%d", luxValue, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorReverseEnable(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_REVERSE_ENABLE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("isEnable=%d, ret=%d", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorReverseEnable(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_REVERSE_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() != 0);
+    LOGI("isEnable=%d, ret=%d", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorCorrectionEnable(bool isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_CORRECTION_ENABLE);
+    request.writeInt32(isEnable ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("isEnable=%d, ret=%d", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorCorrectionEnable(bool &isEnable) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_CORRECTION_ENABLE);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    isEnable = (reply.readInt32() != 0);
+    LOGI("isEnable=%d, ret=%d", isEnable, ret);
+    return ret;
+}
+
+int32_t IPicture::SetColorCorrection(ColorCorrectionType colorCorrection) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_COLOR_CORRECTION);
+    request.writeInt32(colorCorrection);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("colorCorrection=%d, ret=%d", colorCorrection, ret);
+    return ret;
+}
+
+int32_t IPicture::GetColorCorrection(ColorCorrectionType &colorCorrection) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_COLOR_CORRECTION);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    colorCorrection = static_cast<ColorCorrectionType>(reply.readInt32());
+    LOGI("colorCorrection=%d, ret=%d", colorCorrection, ret);
+    return ret;
+}
+
+int32_t IPicture::SetVideoEnhanceInfo(const VideoEnhanceInfo &videoEnhanceInfo) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_VIDEO_ENHANCE_INFO);
+    request.writeString16(android::String16(videoEnhanceInfo.videoId.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.videoName.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.category.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.theme.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.spId.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.hdrSource.c_str()));
+    request.writeString16(android::String16(videoEnhanceInfo.algorithmFlag.c_str()));
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("ret=%d", ret);
+    return ret;
+}
+
+int32_t IPicture::SetScenePqAdjust(const ParameterSet &param) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_SET_SCENE_PQ_ADJUST);
+    request.writeUint32(static_cast<uint32_t>(param.parameters.size()));
+    for (auto item : param.parameters) {
+        request.writeInt32(item.first);
+        request.writeInt32(item.second.first);
+        request.writeInt32(item.second.second);
+    }
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("ret=%d", ret);
+    return ret;
+}
+
+std::map<uint32_t, DciAdjustLut> IPicture::GetOriDciAdjustLut() const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_GET_ORIGINAL_DCI_ADJ_LUT);
+
+    std::map<uint32_t, DciAdjustLut> oriAdjLutMap;
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return oriAdjLutMap;
+    }
+    ret = reply.readInt32();
+    LOGI("ret=%d", ret);
+    if (ret != RETURN_SUCCESS) {
+        return oriAdjLutMap;
+    }
+    uint32_t count = reply.readUint32();
+    LOGI("count=%u", count);
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t dciIndex = reply.readUint32();
+        DciAdjustLut dciAdjustLut{};
+        reply.read(&dciAdjustLut, sizeof(dciAdjustLut));
+        oriAdjLutMap.insert({dciIndex, dciAdjustLut});
+    }
+    return oriAdjLutMap;
+}
+
+int32_t IPicture::ReportCameraStatus(bool onOff) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_REPORT_CAMERA_STATUS);
+    request.writeInt32(onOff ? 1 : 0);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().InvokeLocked(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("InvokeLocked failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("onOff=%d, ret=%d", onOff, ret);
+    return ret;
+}
+
+bool IPicture::DemoModeInDb(DemoMode demoMode) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_DEMO_MODE_IN_DB);
+    request.writeInt32(demoMode);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    bool demoModeInDb = reply.readInt32();
+    LOGI("inDb=%d, demoMode=%d", demoModeInDb, demoMode);
+    return demoModeInDb;
+}
+
+int32_t IPicture::HdrTypeChanged(HdrType preHdrType, HdrType curHdrType) const
+{
+    Parcel request;
+    request.writeInt32(CMD_PICTURE_HDR_TYPE_CHANGED);
+    request.writeInt32(preHdrType);
+    request.writeInt32(curHdrType);
+    Parcel reply;
+    int32_t ret = DriverBaseClient::GetInstance().Invoke(request, reply);
+    if (ret != RETURN_SUCCESS) {
+        LOGE("Invoke failed");
+        return ret;
+    }
+    ret = reply.readInt32();
+    LOGI("preHdrType=%d, curHdrType=%d, ret=%d", preHdrType, curHdrType, ret);
+    return ret;
+}
